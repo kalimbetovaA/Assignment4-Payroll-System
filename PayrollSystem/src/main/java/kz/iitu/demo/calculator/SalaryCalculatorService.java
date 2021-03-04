@@ -1,7 +1,9 @@
 package kz.iitu.demo.calculator;
 
-import kz.iitu.demo.db.EmployeeDao;
-import kz.iitu.demo.employees.*;
+import kz.iitu.demo.controller.EmployeeController;
+import kz.iitu.demo.entity.Employee;
+import kz.iitu.demo.entity.EmployeeType;
+import kz.iitu.demo.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -11,35 +13,31 @@ import java.util.List;
 public class SalaryCalculatorService {
 
     @Autowired
-    private EmployeeDao employeeDao;
+    private EmployeeController employeeController;
 
-    public double calcSalary(Employee emp){
+
+    public double calcSalary(Employee e){
         double totalWeeklySalary=0;
-        if(emp instanceof SalariedEmp){
-            SalariedEmp e = (SalariedEmp) emp;
-            totalWeeklySalary=(e.getWorkedHours()/40)* e.getMonthlySalary()/4;
+        if(e.getEmplType().equals(EmployeeType.SALARIED)){
+            totalWeeklySalary=(e.getHoursWorked()/40)* e.getFixedSalary()/4;
         }
-        else if(emp instanceof HourlyEmp){
-            HourlyEmp e = (HourlyEmp) emp;
-            int overtime=e.getWorkedHours()-40;
-            totalWeeklySalary=40*e.getHourlySalary() + (e.getHourlySalary()*1.5)*overtime;
+        else if(e.getEmplType().equals(EmployeeType.HOURLY)){
+            int overtime=e.getHoursWorked()-40;
+            totalWeeklySalary=40*e.getHourRate() + (e.getHourRate()*1.5)*overtime;
         }
-        else if(emp instanceof CommissionEmp){
-            CommissionEmp e = (CommissionEmp) emp;
-            totalWeeklySalary=e.getSales()*e.getPercentage()/100;
+        else if(e.getEmplType().equals(EmployeeType.COMMISION)){
+            totalWeeklySalary=e.getSales()*e.getCommRate()/100;
         }
-        else if(emp instanceof SalariedCommissionEmp){
-            SalariedCommissionEmp e = (SalariedCommissionEmp) emp;
-            totalWeeklySalary=(e.getSales()*e.getPercentage()/100)+(e.getBaseSalary()/4);
+        else if(e.getEmplType().equals(EmployeeType.SALARIED_COMMISION)){
+            totalWeeklySalary=(e.getSales()*e.getCommRate()/100)+(e.getFixedSalary()/4);
         }
-        emp.setTotalWeeklySalary(totalWeeklySalary);
         return totalWeeklySalary;
     }
 
 
     public double calcAllEmpSalary(){
         double totalSalary=0;
-        List<Employee> allEmp=employeeDao.getAllEmployees();
+        List<Employee> allEmp=employeeController.getAll().getContent();
 
         for (Employee e:allEmp) {
             totalSalary+=calcSalary(e);
@@ -47,9 +45,9 @@ public class SalaryCalculatorService {
         return totalSalary;
     }
 
-    public double calcEmpSalaryByType(String empType){
+    public double calcEmpSalaryByType(EmployeeType employeeType){
         double totalSalary=0;
-        List<Employee> employees=employeeDao.getEmployees(empType);
+        List<Employee> employees= employeeController.getEmployeesByType(employeeType);
 
         for (Employee e:employees) {
             totalSalary+=calcSalary(e);

@@ -1,8 +1,9 @@
 package kz.iitu.demo;
 
 import kz.iitu.demo.calculator.SalaryCalculatorService;
-import kz.iitu.demo.db.EmployeeDao;
-import kz.iitu.demo.employees.Employee;
+import kz.iitu.demo.controller.EmployeeController;
+import kz.iitu.demo.entity.Employee;
+import kz.iitu.demo.entity.EmployeeType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,7 @@ public class PayrollSystem {
     @Autowired
     SalaryCalculatorService calculator;
     @Autowired
-    EmployeeDao employeeDao;
+    EmployeeController employeeController;
 
     public void showMenu(){
 
@@ -54,19 +55,19 @@ public class PayrollSystem {
                 "3 - Commission employees\n" +
                 "4 - Salaried-commission employees");
         int choice = sc.nextInt();
-        String type=null;
+        EmployeeType type=null;
         switch (choice){
             case 1:
-                type="salaried";
+                type=EmployeeType.SALARIED;
                 break;
             case 2:
-                type="hourly";
+                type=EmployeeType.HOURLY;
                 break;
             case 3:
-                type="commission";
+                type=EmployeeType.COMMISION;
                 break;
             case 4:
-                type="salariedCommission";
+                type=EmployeeType.SALARIED_COMMISION;
                 break;
             case 0:
                 break;
@@ -77,21 +78,24 @@ public class PayrollSystem {
 
     public void getEmployeeWeeklySalary(){
         System.out.println("Choose employee: ");
-        List<Employee> employees= employeeDao.getAllEmployees();
+        List<Employee> employees= employeeController.getAll().getContent();
         int i=1;
         for (Employee e:employees) {
-            System.out.println(i+") "+e.getEmpName());
+            System.out.println(i+") "+e.getName());
             i++;
         }
         Employee e = employees.get(sc.nextInt()-1);
         double weeklySalary=calculator.calcSalary(e);
-        System.out.println("Weekly salary of "+e.getEmpName()+" = "+weeklySalary);
+        System.out.println("Weekly salary of "+e.getName()+" = "+weeklySalary);
     }
 
     public void rewardSalariedCommission(){
         System.out.println("how much do you want to add to Base Salary?(%)");
         float percent= sc.nextInt();
-        employeeDao.updateAllBaseSalaries(percent);
+        List<Employee> employees= employeeController.getEmployeesByType(EmployeeType.SALARIED_COMMISION);
+        for (Employee e: employees) {
+            employeeController.updateFixedSalary(e.getId(),e.getFixedSalary()+e.getFixedSalary()* (float)percent/100);
+        }
         System.out.println("Base Salary successfully updated!");
     }
 
